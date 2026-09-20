@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="El viaje de los corazones">
+  <rect width="100" height="100" rx="22" fill="#2B2155"/>
+  <path fill="#E07A5F" d="M50 82 L20 51 C12 43 12 28 24 21 C33 15 45 17 50 28 C55 17 67 15 76 21 C88 28 88 43 80 51 Z"/>
+  <circle cx="50" cy="48" r="7" fill="#E6B84C"/>
+</svg>
