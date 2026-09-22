@@ -12,6 +12,7 @@ import { VideoView } from "@/components/views/VideoView";
 import { LandscapeHint } from "@/components/game/LandscapeHint";
 import { warmupVoices } from "@/lib/audio/speech";
 import { preloadSfx, unlockAudio } from "@/lib/audio/sfx";
+import { clearAulaHash, readAulaFromLocation } from "@/lib/persistence/share";
 import { useGameStore } from "@/store/game-store";
 
 export function GameApp() {
@@ -21,6 +22,11 @@ export function GameApp() {
 
   useEffect(() => {
     hydrate();
+    const share = readAulaFromLocation();
+    if (share) {
+      clearAulaHash();
+      useGameStore.getState().importClassroom(share);
+    }
     warmupVoices();
     const onFirst = () => {
       unlockAudio();

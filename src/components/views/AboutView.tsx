@@ -15,7 +15,8 @@ export function AboutView() {
         </p>
         <p className="text-lg leading-relaxed text-muted">
           Un proyecto de MIRARIM. No se piden ni se envían nombres de niñas o niños. Colegio, curso, docente y
-          logo quedan solo en este dispositivo.
+          logo quedan en este dispositivo. El enlace del aula lleva esos datos en la dirección (después del #),
+          sin pasar por un servidor. El avance del juego no viaja con el enlace.
         </p>
         <button
           type="button"

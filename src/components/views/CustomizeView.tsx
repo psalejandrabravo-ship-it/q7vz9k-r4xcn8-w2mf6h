@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Logo } from "@/components/brand/Logo";
+import { CopyAulaButton } from "@/components/game/CopyAulaButton";
 import { resizeLogoFile } from "@/lib/game/logo";
 import { useGameStore } from "@/store/game-store";
 
@@ -26,7 +27,8 @@ export function CustomizeView() {
         <h1 className="text-3xl font-extrabold text-indigo">Personalizar</h1>
         <p className="text-muted">
           Estos datos se usan en el certificado. Quedan en este dispositivo, no en un servidor. No escribas
-          nombres de estudiantes.
+          nombres de estudiantes. Puedes copiar un enlace del aula para abrirla en otro computador o en el
+          proyector.
         </p>
 
         <label className="space-y-2">
@@ -111,13 +113,16 @@ export function CustomizeView() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setScreen("cover")}
-          className="min-h-14 self-start rounded-xl bg-coral px-8 text-lg font-extrabold text-paper"
-        >
-          Guardar y volver
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setScreen("cover")}
+            className="min-h-14 self-start rounded-xl bg-coral px-8 text-lg font-extrabold text-paper"
+          >
+            Guardar y volver
+          </button>
+          <CopyAulaButton customize={customize} />
+        </div>
       </div>
     </section>
   );

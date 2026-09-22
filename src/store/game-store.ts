@@ -10,6 +10,7 @@ import {
   newProfile,
   saveState,
 } from "@/lib/persistence/storage";
+import type { ClassroomShare } from "@/lib/persistence/share";
 import { playCorrect, playIncorrect, playNext, playStar, setMixer, unlockAudio } from "@/lib/audio/sfx";
 import { speak, stopSpeech } from "@/lib/audio/speech";
 import { burstConfetti } from "@/lib/game/celebrate";
@@ -43,6 +44,7 @@ interface GameStore {
   certificateDate: string | null;
   landscapeHintDismissed: boolean;
   introSeen: boolean;
+  shareNotice: string | null;
   hydrate: () => void;
   persist: () => void;
   setScreen: (screen: Screen) => void;
@@ -69,6 +71,8 @@ interface GameStore {
   saveProfile: (name: string) => void;
   loadProfile: (id: string) => void;
   deleteProfile: (id: string) => void;
+  importClassroom: (share: ClassroomShare) => void;
+  dismissShareNotice: () => void;
 }
 
 function applyMixer(settings: Settings) {
@@ -115,6 +119,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   certificateDate: null,
   landscapeHintDismissed: false,
   introSeen: false,
+  shareNotice: null,
 
   hydrate: () => {
     const loaded = loadState();
@@ -383,4 +388,63 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ profiles, activeProfileId });
     get().persist();
   },
+
+  importClassroom: (share) => {
+    const { profiles, customize: current } = get();
+    const nextCustomize: Customize = {
+      schoolName: share.schoolName,
+      courseName: share.courseName,
+      teacherName: share.teacherName,
+      sessionDate: share.sessionDate || current.sessionDate,
+      logoDataUrl: null,
+    };
+    const match = profiles.find(
+      (p) =>
+        p.name === share.name &&
+        p.customize.schoolName === share.schoolName &&
+        p.customize.courseName === share.courseName,
+    );
+    if (match) {
+      const merged: Customize = {
+        ...match.customize,
+        ...nextCustomize,
+        logoDataUrl: match.customize.logoDataUrl,
+      };
+      set({
+        profiles: profiles.map((p) => (p.id === match.id ? { ...p, customize: merged } : p)),
+        activeProfileId: match.id,
+        customize: merged,
+        completed: [...match.completed],
+        answers: { ...match.answers },
+        certificateDate: match.certificateDate,
+        shareNotice: share.name,
+        screen: "cover",
+        situationIndex: 0,
+        phase: "play",
+        selectedId: null,
+        lastCorrect: null,
+        paused: false,
+      });
+    } else {
+      const profile = newProfile(share.name, nextCustomize);
+      set({
+        profiles: [...profiles, profile],
+        activeProfileId: profile.id,
+        customize: nextCustomize,
+        completed: [],
+        answers: {},
+        certificateDate: null,
+        shareNotice: share.name,
+        screen: "cover",
+        situationIndex: 0,
+        phase: "play",
+        selectedId: null,
+        lastCorrect: null,
+        paused: false,
+      });
+    }
+    get().persist();
+  },
+
+  dismissShareNotice: () => set({ shareNotice: null }),
 }));
