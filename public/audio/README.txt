@@ -1,8 +1,10 @@
-Huecos para narraciones oficiales futuras (MP3).
-Esta versión usa voz del navegador (Web Speech API) y campanillas generadas
-con Web Audio. Cuando existan archivos, pueden colocarse aquí:
+Sonidos de esta versión (campanillas suaves, para sala):
 
-  /public/audio/narracion/mundo1/m1_s1_intro.mp3
-  /public/audio/efectos/campanitas.mp3
+  /public/audio/efectos/click.wav
+  /public/audio/efectos/correct.wav
+  /public/audio/efectos/incorrect.wav
+  /public/audio/efectos/next.wav
+  /public/audio/efectos/star.wav
 
-La mecánica no depende de estos archivos.
+La narración sigue siendo la voz del navegador (ícono de volumen).
+Cuando existan MP3 de narración oficiales, pueden ir en /public/audio/narracion/.

@@ -1,45 +1,81 @@
 import { useEffect } from "react";
 import { CoverView } from "@/components/views/CoverView";
+import { WelcomeView } from "@/components/views/WelcomeView";
 import { HowToView } from "@/components/views/HowToView";
 import { SettingsView } from "@/components/views/SettingsView";
-import { MapView } from "@/components/views/MapView";
 import { PlayView } from "@/components/views/PlayView";
-import { BadgeView } from "@/components/views/BadgeView";
 import { CertificateView } from "@/components/views/CertificateView";
+import { CustomizeView } from "@/components/views/CustomizeView";
+import { ProfilesView } from "@/components/views/ProfilesView";
+import { AboutView } from "@/components/views/AboutView";
+import { VideoView } from "@/components/views/VideoView";
+import { LandscapeHint } from "@/components/game/LandscapeHint";
 import { warmupVoices } from "@/lib/audio/speech";
-import { unlockAudio } from "@/lib/audio/sfx";
+import { preloadSfx, unlockAudio } from "@/lib/audio/sfx";
 import { useGameStore } from "@/store/game-store";
 
 export function GameApp() {
   const screen = useGameStore((s) => s.screen);
   const hydrate = useGameStore((s) => s.hydrate);
+  const persist = useGameStore((s) => s.persist);
 
   useEffect(() => {
     hydrate();
     warmupVoices();
-    const onFirst = () => unlockAudio();
+    const onFirst = () => {
+      unlockAudio();
+      void preloadSfx();
+    };
     window.addEventListener("pointerdown", onFirst, { once: true });
     window.addEventListener("keydown", onFirst, { once: true });
+    const onHide = () => {
+      if (document.visibilityState === "hidden") persist();
+    };
+    document.addEventListener("visibilitychange", onHide);
     return () => {
       window.removeEventListener("pointerdown", onFirst);
       window.removeEventListener("keydown", onFirst);
+      document.removeEventListener("visibilitychange", onHide);
     };
-  }, [hydrate]);
+  }, [hydrate, persist]);
 
+  let view = <CoverView />;
   switch (screen) {
+    case "welcome":
+      view = <WelcomeView />;
+      break;
+    case "video":
+      view = <VideoView />;
+      break;
     case "howto":
-      return <HowToView />;
+      view = <HowToView />;
+      break;
     case "settings":
-      return <SettingsView />;
-    case "map":
-      return <MapView />;
+      view = <SettingsView />;
+      break;
     case "play":
-      return <PlayView />;
-    case "badge":
-      return <BadgeView />;
+      view = <PlayView />;
+      break;
     case "certificate":
-      return <CertificateView />;
+      view = <CertificateView />;
+      break;
+    case "customize":
+      view = <CustomizeView />;
+      break;
+    case "profiles":
+      view = <ProfilesView />;
+      break;
+    case "about":
+      view = <AboutView />;
+      break;
     default:
-      return <CoverView />;
+      view = <CoverView />;
   }
+
+  return (
+    <>
+      {view}
+      <LandscapeHint />
+    </>
+  );
 }

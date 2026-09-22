@@ -1,3 +1,5 @@
+import { duckSfx, unlockAudio } from "@/lib/audio/sfx";
+
 let current: SpeechSynthesisUtterance | null = null;
 
 function pickVoice(): SpeechSynthesisVoice | null {
@@ -11,9 +13,7 @@ function pickVoice(): SpeechSynthesisVoice | null {
   const femaleEs = voices.find(
     (v) =>
       v.lang.toLowerCase().startsWith("es") &&
-      /female|mujer|paulina|monica|mónica|sabina|helena|lucia|lucía|soledad|karina|dalia/i.test(
-        v.name,
-      ),
+      /female|mujer|paulina|monica|mónica|sabina|helena|lucia|lucía|soledad|karina|dalia/i.test(v.name),
   );
   if (femaleEs) return femaleEs;
   return voices.find((v) => v.lang.toLowerCase().startsWith("es")) ?? null;
@@ -24,6 +24,7 @@ export function canSpeak(): boolean {
 }
 
 export function stopSpeech() {
+  duckSfx(false);
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   current = null;
@@ -31,6 +32,7 @@ export function stopSpeech() {
 
 export function speak(text: string, volume: number): boolean {
   if (!canSpeak() || !text.trim()) return false;
+  unlockAudio();
   stopSpeech();
   const utter = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
@@ -43,6 +45,15 @@ export function speak(text: string, volume: number): boolean {
   utter.rate = 0.92;
   utter.pitch = 1;
   utter.volume = Math.max(0, Math.min(1, volume));
+  utter.onstart = () => duckSfx(true);
+  utter.onend = () => {
+    duckSfx(false);
+    current = null;
+  };
+  utter.onerror = () => {
+    duckSfx(false);
+    current = null;
+  };
   current = utter;
   window.speechSynthesis.speak(utter);
   return true;

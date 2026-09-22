@@ -42,9 +42,20 @@ export function SceneImage({
   alt: string;
   className?: string;
 }) {
+  const [failed, setFailed] = useState(false);
+
   return (
-    <figure className={cn("relative min-h-0 min-w-0 overflow-hidden rounded-xl bg-indigo/5", className)}>
-      <FitImage src={src} alt={alt} className="absolute inset-0" />
+    <figure className={cn("flex h-full w-full items-center justify-center overflow-hidden rounded-xl", className)}>
+      {failed ? (
+        <span className="px-4 text-center text-sm font-semibold text-indigo">{alt}</span>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          className="max-h-full max-w-full object-contain"
+          onError={() => setFailed(true)}
+        />
+      )}
     </figure>
   );
 }

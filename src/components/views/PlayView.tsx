@@ -1,268 +1,310 @@
-import { BookOpen, Pause, Volume2, X } from "lucide-react";
+import { useEffect } from "react";
+import { BookOpen, Pause, Settings, Volume2, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { HeartMark } from "@/components/game/HeartMark";
+import { FeedbackScreen } from "@/components/game/FeedbackScreen";
+import { FullscreenButton } from "@/components/game/FullscreenButton";
 import { SceneImage } from "@/components/game/SceneImage";
-import { SequenceBoard } from "@/components/game/SequenceBoard";
-import { worldById } from "@/data";
+import { SITUACIONES, TOTAL_SITUACIONES, optionById } from "@/data";
 import { playClick } from "@/lib/audio/sfx";
 import { cn } from "@/lib/utils";
 import { useGameStore } from "@/store/game-store";
+import type { EmotionOption, LaminaOption, PlayPhase, SiNoOption, Situacion } from "@/types/game";
 
 export function PlayView() {
-  const worldId = useGameStore((s) => s.worldId);
   const situationIndex = useGameStore((s) => s.situationIndex);
   const phase = useGameStore((s) => s.phase);
+  const selectedId = useGameStore((s) => s.selectedId);
   const lastCorrect = useGameStore((s) => s.lastCorrect);
-  const sequenceSlots = useGameStore((s) => s.sequenceSlots);
   const paused = useGameStore((s) => s.paused);
   const completed = useGameStore((s) => s.completed);
   const settings = useGameStore((s) => s.settings);
-  const goMap = useGameStore((s) => s.goMap);
   const togglePause = useGameStore((s) => s.togglePause);
   const choose = useGameStore((s) => s.choose);
-  const placeSequence = useGameStore((s) => s.placeSequence);
+  const revealExplain = useGameStore((s) => s.revealExplain);
   const afterFeedback = useGameStore((s) => s.afterFeedback);
-  const retry = useGameStore((s) => s.retry);
-  const skipToSituation = useGameStore((s) => s.skipToSituation);
+  const beginSituation = useGameStore((s) => s.beginSituation);
   const speakCurrent = useGameStore((s) => s.speakCurrent);
   const updateSettings = useGameStore((s) => s.updateSettings);
+  const openOverlay = useGameStore((s) => s.openOverlay);
 
-  const world = worldId ? worldById[worldId] : null;
-  const sit = world?.situations[situationIndex];
-  if (!world || !sit) return null;
+  useEffect(() => {
+    if (paused || phase !== "chosen") return;
+    const delay = settings.animations ? 500 : 0;
+    const t = window.setTimeout(() => revealExplain(), delay);
+    return () => window.clearTimeout(t);
+  }, [phase, paused, settings.animations, situationIndex, revealExplain]);
+
+  useEffect(() => {
+    if (paused) return;
+    const seconds = settings.rhythm === "manual" ? null : settings.rhythm;
+    if (seconds == null || phase !== "explain") return;
+    const t = window.setTimeout(() => afterFeedback(), seconds * 1000);
+    return () => window.clearTimeout(t);
+  }, [phase, paused, settings.rhythm, situationIndex, afterFeedback]);
+
+  const sit = SITUACIONES[situationIndex];
+  if (!sit) return null;
 
   const scriptOpen = settings.scriptOpen;
-  const scriptText =
-    phase === "feedback"
-      ? lastCorrect
-        ? sit.feedbackCorrect
-        : sit.feedbackIncorrect
-      : `${sit.narration} ${sit.optionsDescription}`;
-  const optionLabel =
-    sit.mechanic === "yesno"
-      ? "¿Estuvo bien?"
-      : sit.mechanic === "sequence"
-        ? "Ordena los pasos"
-        : "Elige una lámina";
+  const motion = settings.animations;
+  const showQuestion = settings.narrationMode !== "audio";
+  const chosen = optionById(sit, selectedId);
 
   function pick(id: string) {
+    if (phase !== "play") return;
     playClick();
     choose(id);
   }
 
-  const sceneList =
-    phase === "feedback" && lastCorrect && sit.closingSrc
-      ? [{ src: sit.closingSrc, alt: sit.closingAlt ?? "" }]
-      : sit.scenes;
+  const pauseModal = paused ? (
+    <PauseModal
+      onResume={togglePause}
+      onSettings={() => {
+        togglePause();
+        openOverlay("settings");
+      }}
+      onManual={() => {
+        togglePause();
+        openOverlay("howto");
+      }}
+    />
+  ) : null;
+
+  if (phase === "explain" && chosen) {
+    return (
+      <>
+        <FeedbackScreen
+          sit={sit}
+          chosen={chosen}
+          correct={!!lastCorrect}
+          completed={completed}
+          motion={motion}
+          onContinue={afterFeedback}
+          onSpeak={speakCurrent}
+          onSettings={() => openOverlay("settings")}
+          onPause={togglePause}
+        />
+        {pauseModal}
+      </>
+    );
+  }
 
   return (
-    <section className="play-stage text-ink">
-      <aside className="play-rail">
-        <div className="play-rail-nav">
-          <Logo className="hidden h-5 shrink-0 xl:block" />
-          <button type="button" onClick={goMap} className="h-8 shrink-0 rounded-lg bg-indigo px-3 text-sm font-bold text-cream">
-            Mapa
-          </button>
-          <h1 className="min-w-0 flex-1 truncate text-sm font-extrabold text-indigo">{world.name}</h1>
-          <div className="flex shrink-0 gap-1">
-            {world.situations.map((item, i) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => skipToSituation(i)}
-                className={cn(
-                  "size-7 rounded-full text-xs font-extrabold",
-                  i === situationIndex ? "ring-2 ring-coral ring-offset-1" : "",
-                  completed.includes(item.id) ? "bg-coral text-paper" : "bg-indigo/15 text-indigo",
-                )}
-                aria-label={`${item.title}${completed.includes(item.id) ? ", completada" : ""}`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+    <section className={cn("stage-play", motion ? "" : "no-motion")}>
+      <header className="area-header">
+        <Logo variant="white" className="hidden h-7 shrink-0 lg:block" />
+        <h1 className="min-w-0 flex-1 truncate text-sm font-extrabold tracking-wide text-cream md:text-base">
+          El viaje de los corazones
+        </h1>
+        <p className="shrink-0 text-xs font-bold uppercase tracking-widest text-gold md:text-sm">
+          Situación {sit.id} de {TOTAL_SITUACIONES}
+        </p>
+        <button
+          type="button"
+          onClick={() => updateSettings({ scriptOpen: !scriptOpen })}
+          className={cn(
+            "inline-flex h-10 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-semibold lg:hidden",
+            scriptOpen ? "bg-cream text-indigo" : "text-cream",
+          )}
+        >
+          <BookOpen className="size-4" />
+          Guión
+        </button>
+        <button type="button" onClick={speakCurrent} className="h-10 shrink-0 px-1 text-cream" aria-label="Escuchar narración">
+          <Volume2 className="size-5" />
+        </button>
+        <FullscreenButton light />
+        <button
+          type="button"
+          onClick={() => openOverlay("settings")}
+          className="h-10 shrink-0 px-1 text-cream"
+          aria-label="Configuración"
+        >
+          <Settings className="size-5" />
+        </button>
+        <button type="button" onClick={togglePause} className="h-10 shrink-0 px-1 text-cream" aria-label="Pausa">
+          <Pause className="size-5" />
+        </button>
+      </header>
+
+      <main className="area-main">
+        <div className="play-art">
+          <SceneImage src={sit.ilustracion} alt={sit.ilustracionAlt} />
+        </div>
+        {showQuestion ? <p className="play-question">{sit.pregunta}</p> : <div className="play-question" />}
+        <OptionsBoard sit={sit} phase={phase} selectedId={selectedId} onPick={pick} />
+      </main>
+
+      <aside className={cn("area-script", scriptOpen ? "is-open" : "")}>
+        <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+          <p className="text-xs font-extrabold uppercase tracking-widest text-coral">Preguntas de reflexión</p>
           <button
             type="button"
-            onClick={() => updateSettings({ scriptOpen: !scriptOpen })}
-            className={cn(
-              "inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-semibold",
-              scriptOpen ? "bg-indigo text-cream" : "text-indigo",
-            )}
+            onClick={() => updateSettings({ scriptOpen: false })}
+            className="text-indigo lg:hidden"
+            aria-label="Cerrar guión"
           >
-            <BookOpen className="size-4" />
-            Guión
-          </button>
-          <button type="button" onClick={speakCurrent} className="h-8 shrink-0 px-1 text-indigo" aria-label="Escuchar narración">
-            <Volume2 className="size-5" />
-          </button>
-          <button type="button" onClick={togglePause} className="h-8 shrink-0 px-1 text-indigo" aria-label="Pausa">
-            <Pause className="size-5" />
+            <X className="size-5" />
           </button>
         </div>
-
-        <div className="play-rail-copy">
-          <p className="text-xs font-bold uppercase tracking-wide text-coral">{sit.title}</p>
-          <p className="mt-1 text-base font-extrabold leading-snug text-indigo">{sit.narration}</p>
-          <p className="mt-2 text-xs font-semibold tracking-wide text-muted">{sit.hint}</p>
-          {sit.mechanic === "sequence" && sit.sequenceCards ? (
-            <ul className="mt-3 space-y-1.5">
-              {[...sit.sequenceCards]
-                .sort((a, b) => a.id.localeCompare(b.id))
-                .map((card) => (
-                <li key={card.id} className="flex items-start gap-2 text-sm leading-snug text-ink">
-                  <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-gold text-xs font-extrabold text-ink">
-                    {card.id}
-                  </span>
-                  <span className="font-semibold">{card.title}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {scriptOpen ? (
-            <div className="mt-3 flex items-start gap-2 rounded-lg bg-indigo/10 px-3 py-2">
-              <p className="min-w-0 flex-1 text-sm leading-snug text-ink">{scriptText}</p>
-              <button type="button" onClick={() => updateSettings({ scriptOpen: false })} className="shrink-0 text-indigo" aria-label="Ocultar guión">
-                <X className="size-4" />
-              </button>
-            </div>
-          ) : null}
+        <div className="min-h-0 flex-1 overflow-auto px-4 py-3">
+          <ol className="list-decimal space-y-3 pl-5 text-base leading-snug text-ink">
+            {sit.guion.preguntas.map((q) => (
+              <li key={q}>{q}</li>
+            ))}
+          </ol>
         </div>
       </aside>
 
-      <div className="play-square-wrap">
-        <div
-          className={cn(
-            "play-square",
-            sit.mechanic === "sequence"
-              ? "is-sequence"
-              : sit.mechanic === "yesno"
-                ? "is-yesno"
-                : sit.choices?.length === 4
-                  ? "is-emotion"
-                  : "is-choose",
-          )}
-        >
-          <div className="play-scenes">
-            {sceneList.map((scene) => (
-              <SceneImage key={scene.src} src={scene.src} alt={scene.alt} />
-            ))}
-          </div>
+      <footer className="area-footer">
+        {SITUACIONES.map((item, i) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => beginSituation(i)}
+            className={cn(
+              "progress-dot",
+              i === situationIndex ? "is-current" : "",
+              completed.includes(item.id) ? "is-done" : "",
+            )}
+            aria-label={`${item.titulo}${completed.includes(item.id) ? ", completada" : ""}`}
+          >
+            {item.id}
+          </button>
+        ))}
+      </footer>
 
-          {sit.mechanic === "sequence" && sit.sequenceCards ? (
-            <div
-              className={cn(
-                "flex min-h-0 flex-col overflow-hidden rounded-xl bg-indigo p-2 text-cream",
-                phase === "feedback" && !lastCorrect ? "animate-shake" : "",
-              )}
-            >
-              <p className="mb-1 shrink-0 text-center text-xs font-bold tracking-wide text-gold">{optionLabel}</p>
-              {phase === "play" ? (
-                <SequenceBoard
-                  cards={sit.sequenceCards}
-                  slots={sequenceSlots}
-                  onPlace={placeSequence}
-                />
-              ) : (
-                <FeedbackBar correct={!!lastCorrect} onNext={afterFeedback} onRetry={retry} />
-              )}
-            </div>
-          ) : null}
-
-          {sit.mechanic !== "sequence" && sit.choices ? (
-            <div
-              className={cn(
-                "flex min-h-0 flex-col overflow-hidden rounded-xl bg-indigo p-2 text-cream",
-                phase === "feedback" && !lastCorrect ? "animate-shake" : "",
-              )}
-            >
-              <p className="mb-1 shrink-0 text-center text-xs font-bold tracking-wide text-gold">{optionLabel}</p>
-              {phase === "play" ? (
-                <div
-                  className={cn(
-                    "grid min-h-0 flex-1 gap-2 overflow-hidden",
-                    sit.mechanic === "yesno" ? "grid-cols-2" : sit.choices.length === 4 ? "grid-cols-4" : "grid-cols-3",
-                  )}
-                >
-                  {sit.choices.map((choice, i) =>
-                    sit.mechanic === "yesno" ? (
-                      <button
-                        key={choice.id}
-                        type="button"
-                        onClick={() => pick(choice.id)}
-                        className={cn(
-                          "rounded-lg px-3 text-lg font-extrabold leading-tight shadow-md transition hover:-translate-y-0.5 active:scale-95",
-                          choice.id === "yes" ? "bg-gold text-ink" : "bg-coral text-paper",
-                        )}
-                      >
-                        {choice.label}
-                      </button>
-                    ) : (
-                      <button key={choice.id} type="button" onClick={() => pick(choice.id)} className="choice-card transition hover:-translate-y-0.5 hover:shadow-lg active:scale-95">
-                        {choice.src ? (
-                          <span className="fit-pic">
-                            <img src={choice.src} alt={choice.alt} />
-                          </span>
-                        ) : null}
-                        <span className="choice-cap">
-                          {i + 1}. {choice.label.replace(/^Lámina \d+\.\s*/, "")}
-                        </span>
-                      </button>
-                    ),
-                  )}
-                </div>
-              ) : (
-                <FeedbackBar correct={!!lastCorrect} onNext={afterFeedback} onRetry={retry} />
-              )}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {paused ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-indigo/70 p-6">
-          <div className="max-w-lg rounded-xl bg-paper p-8 text-center">
-            <h2 className="text-3xl font-extrabold text-indigo">Pausa para conversar</h2>
-            <p className="mt-3 text-lg text-muted">El audio está detenido. Cuando quieran, continúan.</p>
-            <button type="button" onClick={togglePause} className="mt-6 min-h-14 rounded-xl bg-coral px-8 text-lg font-extrabold text-paper">
-              Continuar
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {pauseModal}
     </section>
   );
 }
 
-function FeedbackBar({
-  correct,
-  onNext,
-  onRetry,
+function OptionsBoard({
+  sit,
+  phase,
+  selectedId,
+  onPick,
 }: {
-  correct: boolean;
-  onNext: () => void;
-  onRetry: () => void;
+  sit: Situacion;
+  phase: PlayPhase;
+  selectedId: string | null;
+  onPick: (id: string) => void;
 }) {
+  const disabled = phase !== "play";
+  if (sit.mecanica === "si_no") {
+    return (
+      <div className="play-options grid h-full grid-cols-2 gap-3">
+        {(sit.opciones as SiNoOption[]).map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            disabled={disabled}
+            onClick={() => onPick(opt.id)}
+            className={cn(
+              "flex min-h-16 items-center justify-center rounded-xl px-4 text-xl font-extrabold shadow-md transition active:scale-95 md:min-h-20 md:text-2xl",
+              opt.id === "si" ? "bg-yes text-paper" : "bg-no text-paper",
+              optionMark(phase, selectedId, opt.id, opt.correcta),
+            )}
+          >
+            {opt.texto}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (sit.mecanica === "identificar_emocion_4") {
+    return (
+      <div className="play-options grid h-full grid-cols-2 gap-2 md:gap-3">
+        {(sit.opciones as EmotionOption[]).map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            disabled={disabled}
+            onClick={() => onPick(opt.id)}
+            className={cn(
+              "flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 font-extrabold text-ink shadow-md transition active:scale-95",
+              emotionBg(opt.id),
+              optionMark(phase, selectedId, opt.id, opt.correcta),
+            )}
+          >
+            <span className="text-3xl md:text-4xl" aria-hidden>
+              {opt.emoji}
+            </span>
+            <span className="text-xs tracking-wide md:text-sm">{opt.texto}</span>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center">
-      {correct ? (
-        <HeartMark burst className="size-16 text-coral animate-pop" />
-      ) : (
-        <img
-          src="/assets/illustrations/characters/buho.jpg"
-          alt="Búho sabio invitando a pensar otra vez."
-          className="size-20 rounded-full object-cover shadow-lg animate-pop"
-        />
-      )}
-      <p className="text-xl font-extrabold text-cream">{correct ? "¡Muy bien!" : "Pensemos otra vez"}</p>
-      {correct ? (
-        <button type="button" onClick={onNext} className="min-h-12 rounded-xl bg-gold px-8 text-lg font-extrabold text-ink shadow-lg transition hover:scale-105">
-          Siguiente
+    <div className="play-options lamina-grid">
+      {(sit.opciones as LaminaOption[]).map((opt, i) => (
+        <button
+          key={opt.id}
+          type="button"
+          disabled={disabled}
+          onClick={() => onPick(opt.id)}
+          className={cn("choice-card", optionMark(phase, selectedId, opt.id, opt.correcta))}
+        >
+          <span className="fit-pic">
+            <img src={opt.imagen} alt={opt.alt} />
+          </span>
+          <span className="choice-cap">
+            {String.fromCharCode(65 + i)}. {opt.texto}
+          </span>
         </button>
-      ) : (
-        <button type="button" onClick={onRetry} className="min-h-12 rounded-xl bg-coral px-8 text-lg font-extrabold text-paper shadow-lg transition hover:scale-105">
-          Intentar de nuevo
-        </button>
-      )}
+      ))}
+    </div>
+  );
+}
+
+function optionMark(phase: PlayPhase, selectedId: string | null, id: string, correcta: boolean) {
+  if (phase === "play") return "";
+  const picked = selectedId === id && phase === "chosen" ? " is-picked" : "";
+  if (correcta) return `is-right${picked}`;
+  if (selectedId === id) return `is-wrong${picked}`;
+  return "is-dim";
+}
+
+function emotionBg(id: EmotionOption["id"]) {
+  if (id === "feliz") return "bg-emotion-feliz";
+  if (id === "triste") return "bg-emotion-triste text-paper";
+  if (id === "asustado") return "bg-emotion-asustado text-paper";
+  return "bg-emotion-enojado text-paper";
+}
+
+function PauseModal({
+  onResume,
+  onSettings,
+  onManual,
+}: {
+  onResume: () => void;
+  onSettings: () => void;
+  onManual: () => void;
+}) {
+  const goCover = useGameStore((s) => s.goCover);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-indigo/70 p-6">
+      <div className="w-full max-w-md rounded-xl bg-paper p-8 text-center">
+        <h2 className="text-3xl font-extrabold text-indigo">Pausa</h2>
+        <p className="mt-3 text-lg text-muted">El audio está detenido. Cuando quieran, continúan.</p>
+        <div className="mt-6 flex flex-col gap-2">
+          <button type="button" onClick={onResume} className="min-h-14 rounded-xl bg-coral px-8 text-lg font-extrabold text-paper">
+            Continuar
+          </button>
+          <button type="button" onClick={onSettings} className="min-h-12 rounded-xl bg-indigo/10 px-8 font-bold text-indigo">
+            Configuración
+          </button>
+          <button type="button" onClick={onManual} className="min-h-12 rounded-xl bg-indigo/10 px-8 font-bold text-indigo">
+            Cómo se juega
+          </button>
+          <button type="button" onClick={goCover} className="min-h-12 font-semibold text-muted underline">
+            Volver al inicio
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

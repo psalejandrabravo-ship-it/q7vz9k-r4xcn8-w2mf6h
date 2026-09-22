@@ -1,57 +1,163 @@
 import { z } from "zod";
-import type { PersistedState, Settings, WorldId } from "@/types/game";
+import type { Customize, PersistedState, Profile, Settings } from "@/types/game";
 
 export const STORAGE_KEY = "mirarim-viaje-corazones";
+export const SCHEMA_VERSION = 3 as const;
 
 const settingsSchema = z.object({
-  narrationMode: z.enum(["audio", "read", "both"]),
-  volume: z.number().min(0).max(1),
-  rhythm: z.union([z.literal("manual"), z.literal(3), z.literal(5), z.literal(8)]),
-  courseName: z.string().max(80),
-  scriptOpen: z.boolean(),
+  narrationMode: z.enum(["audio", "read", "both"]).default("read"),
+  volumeMaster: z.number().min(0).max(1).default(0.8),
+  volumeNarration: z.number().min(0).max(1).default(0.9),
+  volumeSfx: z.number().min(0).max(1).default(0.75),
+  volumeMusic: z.number().min(0).max(1).default(0.4),
+  animations: z.boolean().default(true),
+  particles: z.boolean().default(true),
+  rhythm: z.union([z.literal("manual"), z.literal(3), z.literal(5), z.literal(8)]).default("manual"),
+  scriptOpen: z.boolean().default(true),
 });
 
-const persistedSchema = z.object({
-  schemaVersion: z.union([z.literal(1), z.literal(2)]),
-  completed: z.array(z.string()),
-  badges: z.array(z.enum(["m1", "m2", "m3", "m4"])),
-  settings: settingsSchema,
+const customizeSchema = z.object({
+  schoolName: z.string().max(80).default(""),
+  courseName: z.string().max(80).default(""),
+  teacherName: z.string().max(80).default(""),
+  logoDataUrl: z.string().nullable().default(null),
+  sessionDate: z.string().default(""),
+});
+
+const answerSchema = z.object({
+  optionId: z.string(),
+  correct: z.boolean(),
+});
+
+const profileSchema = z.object({
+  id: z.string(),
+  name: z.string().max(80),
+  customize: customizeSchema,
+  completed: z.array(z.number()),
+  answers: z.record(z.string(), answerSchema),
   certificateDate: z.string().nullable(),
+});
+
+const v3Schema = z.object({
+  schemaVersion: z.literal(3),
+  completed: z.array(z.number()),
+  answers: z.record(z.string(), answerSchema),
+  settings: settingsSchema,
+  customize: customizeSchema,
+  profiles: z.array(profileSchema),
+  activeProfileId: z.string().nullable(),
+  certificateDate: z.string().nullable(),
+  landscapeHintDismissed: z.boolean(),
+  introSeen: z.boolean().default(false),
 });
 
 export const defaultSettings: Settings = {
   narrationMode: "read",
-  volume: 0.8,
+  volumeMaster: 0.8,
+  volumeNarration: 0.9,
+  volumeSfx: 0.75,
+  volumeMusic: 0.4,
+  animations: true,
+  particles: true,
   rhythm: "manual",
-  courseName: "",
-  scriptOpen: false,
+  scriptOpen: true,
 };
 
+export function defaultCustomize(): Customize {
+  return {
+    schoolName: "",
+    courseName: "",
+    teacherName: "",
+    logoDataUrl: null,
+    sessionDate: new Date().toISOString().slice(0, 10),
+  };
+}
+
 export const defaultPersisted: PersistedState = {
-  schemaVersion: 2,
+  schemaVersion: SCHEMA_VERSION,
   completed: [],
-  badges: [],
+  answers: {},
   settings: defaultSettings,
+  customize: defaultCustomize(),
+  profiles: [],
+  activeProfileId: null,
   certificateDate: null,
+  landscapeHintDismissed: false,
+  introSeen: false,
 };
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function migrate(raw: unknown): PersistedState {
+  if (!raw || typeof raw !== "object") return defaultPersisted;
+  const data = raw as Record<string, unknown>;
+  const version = data.schemaVersion;
+
+  if (version === 3) {
+    const parsed = v3Schema.safeParse(raw);
+    if (!parsed.success) return defaultPersisted;
+    return {
+      ...parsed.data,
+      introSeen: parsed.data.introSeen ?? false,
+      settings: { ...defaultSettings, ...parsed.data.settings, scriptOpen: parsed.data.settings.scriptOpen },
+      customize: {
+        ...defaultCustomize(),
+        ...parsed.data.customize,
+        sessionDate: parsed.data.customize.sessionDate || todayIso(),
+      },
+    };
+  }
+
+  if (version === 1 || version === 2 || version === 4) {
+    const oldSettings = (data.settings ?? {}) as Record<string, unknown>;
+    const oldCustomize = (data.customize ?? {}) as Record<string, unknown>;
+    const volume = typeof oldSettings.volumeMaster === "number" ? oldSettings.volumeMaster : typeof oldSettings.volume === "number" ? oldSettings.volume : 0.8;
+    const courseName = typeof oldSettings.courseName === "string" ? oldSettings.courseName : typeof oldCustomize.courseName === "string" ? oldCustomize.courseName : "";
+    const narrationMode =
+      oldSettings.narrationMode === "audio" || oldSettings.narrationMode === "both" || oldSettings.narrationMode === "read"
+        ? oldSettings.narrationMode
+        : "read";
+    const rhythm =
+      oldSettings.rhythm === 3 || oldSettings.rhythm === 5 || oldSettings.rhythm === 8 || oldSettings.rhythm === "manual"
+        ? oldSettings.rhythm
+        : "manual";
+    return {
+      ...defaultPersisted,
+      settings: {
+        ...defaultSettings,
+        narrationMode,
+        volumeMaster: volume,
+        volumeNarration: typeof oldSettings.volumeNarration === "number" ? oldSettings.volumeNarration : 0.9,
+        volumeSfx: typeof oldSettings.volumeSfx === "number" ? oldSettings.volumeSfx : 0.75,
+        volumeMusic: typeof oldSettings.volumeMusic === "number" ? oldSettings.volumeMusic : 0.4,
+        animations: oldSettings.animations !== false,
+        particles: oldSettings.particles !== false,
+        rhythm,
+        scriptOpen: oldSettings.scriptOpen !== false,
+      },
+      customize: {
+        ...defaultCustomize(),
+        schoolName: typeof oldCustomize.schoolName === "string" ? oldCustomize.schoolName : "",
+        courseName,
+        teacherName: typeof oldCustomize.teacherName === "string" ? oldCustomize.teacherName : "",
+        logoDataUrl: typeof oldCustomize.logoDataUrl === "string" ? oldCustomize.logoDataUrl : null,
+      },
+      landscapeHintDismissed: data.landscapeHintDismissed === true,
+      introSeen: data.introSeen === true,
+    };
+  }
+
+  return defaultPersisted;
+}
 
 export function loadState(): PersistedState {
   if (typeof window === "undefined") return defaultPersisted;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultPersisted;
-    const parsed = persistedSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) return defaultPersisted;
-    return {
-      schemaVersion: 2,
-      completed: parsed.data.completed,
-      badges: parsed.data.badges,
-      settings: {
-        ...parsed.data.settings,
-        scriptOpen: false,
-      },
-      certificateDate: parsed.data.certificateDate,
-    };
+    return migrate(JSON.parse(raw));
   } catch {
     return defaultPersisted;
   }
@@ -60,7 +166,8 @@ export function loadState(): PersistedState {
 export function saveState(state: PersistedState): boolean {
   if (typeof window === "undefined") return false;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, schemaVersion: 2 }));
+    const payload: PersistedState = { ...state, schemaVersion: SCHEMA_VERSION };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     return true;
   } catch {
     return false;
@@ -88,4 +195,13 @@ export function isStorageAvailable(): boolean {
   }
 }
 
-export const WORLD_IDS: WorldId[] = ["m1", "m2", "m3", "m4"];
+export function newProfile(name: string, customize: Customize): Profile {
+  return {
+    id: `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    name: name.trim().slice(0, 80) || "Grupo",
+    customize: { ...customize },
+    completed: [],
+    answers: {},
+    certificateDate: null,
+  };
+}

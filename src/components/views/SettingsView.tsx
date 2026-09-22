@@ -6,15 +6,22 @@ export function SettingsView() {
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const closeOverlay = useGameStore((s) => s.closeOverlay);
+  const setScreen = useGameStore((s) => s.setScreen);
   const confirmReset = useGameStore((s) => s.confirmReset);
   const requestReset = useGameStore((s) => s.requestReset);
   const cancelReset = useGameStore((s) => s.cancelReset);
   const confirmAndReset = useGameStore((s) => s.confirmAndReset);
   const storageOk = useGameStore((s) => s.storageOk);
   const speechOk = useGameStore((s) => s.speechOk);
+  const returnTo = useGameStore((s) => s.returnTo);
+
+  function back() {
+    if (returnTo && returnTo !== "settings") closeOverlay();
+    else setScreen("cover");
+  }
 
   return (
-    <section className="min-h-dvh bg-cream px-6 py-10 text-ink">
+    <section className="sheet-view px-6 py-10">
       <div className="mx-auto flex max-w-2xl flex-col gap-8">
         <Logo />
         <h1 className="text-3xl font-extrabold text-indigo">Configuración</h1>
@@ -23,7 +30,7 @@ export function SettingsView() {
           <legend className="text-lg font-bold text-indigo">Narración</legend>
           {(
             [
-              ["audio", "Sin texto en pantalla (voz solo con el ícono)"],
+              ["audio", "Sin texto de pregunta en pantalla (voz solo con el ícono)"],
               ["read", "Mostrar la pregunta (recomendado)"],
               ["both", "Pregunta visible y voz con el ícono"],
             ] as Array<[NarrationMode, string]>
@@ -40,31 +47,35 @@ export function SettingsView() {
             </label>
           ))}
           {!speechOk ? (
-            <p className="text-sm text-muted">
-              Este navegador no tiene voz. Puedes leer el guión en pantalla.
-            </p>
+            <p className="text-sm text-muted">Este navegador no tiene voz. Puedes leer el guión en pantalla.</p>
           ) : (
-            <p className="text-sm text-muted">
-              La narración no se oye sola. Pulsa el ícono de volumen durante el juego.
-            </p>
+            <p className="text-sm text-muted">La narración no se oye sola. Pulsa el ícono durante el juego.</p>
           )}
         </fieldset>
 
-        <label className="space-y-2">
-          <span className="text-lg font-bold text-indigo">Volumen</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={settings.volume}
-            onChange={(e) => updateSettings({ volume: Number(e.target.value) })}
-            className="w-full accent-coral"
-          />
-        </label>
+        <VolumeSlider
+          label="Volumen general"
+          value={settings.volumeMaster}
+          onChange={(volumeMaster) => updateSettings({ volumeMaster })}
+        />
+        <VolumeSlider
+          label="Narración"
+          value={settings.volumeNarration}
+          onChange={(volumeNarration) => updateSettings({ volumeNarration })}
+        />
+        <VolumeSlider
+          label="Efectos"
+          value={settings.volumeSfx}
+          onChange={(volumeSfx) => updateSettings({ volumeSfx })}
+        />
+        <VolumeSlider
+          label="Música (cuando haya pistas)"
+          value={settings.volumeMusic}
+          onChange={(volumeMusic) => updateSettings({ volumeMusic })}
+        />
 
         <fieldset className="space-y-3">
-          <legend className="text-lg font-bold text-indigo">Ritmo de las escenas</legend>
+          <legend className="text-lg font-bold text-indigo">Ritmo</legend>
           {(
             [
               ["manual", "La educadora avanza"],
@@ -86,34 +97,31 @@ export function SettingsView() {
           ))}
         </fieldset>
 
-        <label className="space-y-2">
-          <span className="text-lg font-bold text-indigo">Nombre del curso</span>
+        <label className="flex min-h-14 items-center gap-3 rounded-xl bg-paper px-4">
           <input
-            type="text"
-            value={settings.courseName}
-            onChange={(e) => updateSettings({ courseName: e.target.value })}
-            placeholder="Por ejemplo: Sala amarilla"
-            maxLength={80}
-            className="min-h-14 w-full rounded-xl border border-line bg-paper px-4 text-lg"
+            type="checkbox"
+            checked={settings.animations}
+            onChange={(e) => updateSettings({ animations: e.target.checked })}
+            className="size-5 accent-coral"
           />
-          <span className="block text-sm text-muted">
-            No ingreses nombres ni información personal o sensible de estudiantes,
-            pacientes o participantes.
-          </span>
+          <span className="text-lg">Animaciones</span>
+        </label>
+        <label className="flex min-h-14 items-center gap-3 rounded-xl bg-paper px-4">
+          <input
+            type="checkbox"
+            checked={settings.particles}
+            onChange={(e) => updateSettings({ particles: e.target.checked })}
+            className="size-5 accent-coral"
+          />
+          <span className="text-lg">Confeti al acertar</span>
         </label>
 
         {!storageOk ? (
-          <p className="rounded-xl bg-gold/20 px-4 py-3 text-sm">
-            Este navegador no guarda el progreso al recargar.
-          </p>
+          <p className="rounded-xl bg-gold/20 px-4 py-3 text-sm">Este navegador no guarda el progreso al recargar.</p>
         ) : null}
 
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={closeOverlay}
-            className="min-h-14 rounded-xl bg-indigo px-8 text-lg font-bold text-cream"
-          >
+          <button type="button" onClick={back} className="min-h-14 rounded-xl bg-indigo px-8 text-lg font-bold text-cream">
             Guardar y volver
           </button>
           {!confirmReset ? (
@@ -126,7 +134,7 @@ export function SettingsView() {
             </button>
           ) : (
             <div className="flex flex-wrap items-center gap-3 rounded-xl bg-paper p-3">
-              <p className="font-semibold">¿Borrar todo el avance y la configuración?</p>
+              <p className="font-semibold">¿Borrar el avance de las 12 situaciones?</p>
               <button
                 type="button"
                 onClick={confirmAndReset}
@@ -142,5 +150,30 @@ export function SettingsView() {
         </div>
       </div>
     </section>
+  );
+}
+
+function VolumeSlider({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="space-y-2">
+      <span className="text-lg font-bold text-indigo">{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-coral"
+      />
+    </label>
   );
 }
