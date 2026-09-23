@@ -35,15 +35,15 @@ export function BrandMark({
   if (logoMode === "hidden") return null;
   if (logoMode === "custom" && logoDataUrl) {
     return (
-      <span
+      <img
+        src={logoDataUrl}
+        alt="Logo del establecimiento"
         className={cn(
-          "inline-flex h-9 max-w-72 shrink-0 items-center justify-center",
-          variant === "white" && "rounded-lg bg-paper px-2.5 py-1",
+          "h-12 w-auto max-w-56 shrink-0 object-contain",
           className,
+          variant === "white" && "h-12 bg-transparent p-0 shadow-none md:h-14",
         )}
-      >
-        <img src={logoDataUrl} alt="Logo del establecimiento" className="h-full w-auto max-w-full object-contain" />
-      </span>
+      />
     );
   }
   if (logoMode === "custom") return null;

@@ -35,22 +35,28 @@ export function resizeLogoFile(file: File): Promise<string> {
   });
 }
 
-/** JPEG chico para que el enlace de la presentación siga siendo compartible. */
+/** PNG con transparencia, para que el enlace no le ponga un rectángulo detrás. */
 export async function compressLogoDataUrl(dataUrl: string): Promise<string | null> {
-  const tries: Array<[number, number]> = [
-    [180, 0.72],
-    [140, 0.6],
-    [110, 0.5],
-    [84, 0.45],
-  ];
+  const edges = [200, 160, 128, 96];
   let last = "";
-  for (const [edge, quality] of tries) {
+  for (const edge of edges) {
+    try {
+      last = await drawLogo(dataUrl, edge, "image/png");
+    } catch {
+      return null;
+    }
+    if (last.length <= 16000) return last;
+  }
+  for (const [edge, quality] of [
+    [140, 0.72],
+    [96, 0.55],
+  ] as Array<[number, number]>) {
     try {
       last = await drawLogo(dataUrl, edge, "image/jpeg", quality);
     } catch {
       return null;
     }
-    if (last.length <= 7000) return last;
+    if (last.length <= 12000) return last;
   }
-  return last.length <= 12000 ? last : null;
+  return last.length <= 16000 ? last : null;
 }

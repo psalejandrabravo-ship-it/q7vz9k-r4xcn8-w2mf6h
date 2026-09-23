@@ -41,7 +41,7 @@ function asLogoMode(value: unknown): LogoMode {
 function asLogo(value: unknown): string | null {
   if (typeof value !== "string") return null;
   if (!value.startsWith("data:image/")) return null;
-  if (value.length > 20000) return null;
+  if (value.length > 18000) return null;
   return value;
 }
 

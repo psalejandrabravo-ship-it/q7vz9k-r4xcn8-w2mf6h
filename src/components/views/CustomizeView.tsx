@@ -109,7 +109,7 @@ export function CustomizeView() {
 
           {customize.logoMode === "custom" ? (
             <div className="flex items-center gap-4 rounded-xl bg-paper p-4 shadow-[inset_0_0_0_1px_var(--color-line)]">
-              <div className="flex h-20 w-44 items-center justify-center overflow-hidden rounded-xl bg-cream px-2 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <div className="flex h-24 w-44 items-center justify-center">
                 {customize.logoDataUrl ? (
                   <img src={customize.logoDataUrl} alt="Logo cargado" className="max-h-full max-w-full object-contain" />
                 ) : (
