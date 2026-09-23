@@ -1,5 +1,5 @@
 import { BookOpen, Play, Settings, SlidersHorizontal, Users } from "lucide-react";
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { CopyAulaButton } from "@/components/game/CopyAulaButton";
 import { FullscreenButton } from "@/components/game/FullscreenButton";
 import { TOTAL_SITUACIONES } from "@/data";
@@ -38,7 +38,7 @@ export function CoverView() {
         <FullscreenButton light label />
       </div>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 pb-6 text-center">
-        <Logo variant="white" className="h-8 shrink-0 md:h-11" />
+        <BrandMark variant="white" className="h-8 shrink-0 md:h-11" />
         <div className="max-w-3xl shrink-0 space-y-2">
           <h1 className="text-3xl font-extrabold tracking-tight text-cream sm:text-4xl md:text-5xl">
             El viaje de los corazones

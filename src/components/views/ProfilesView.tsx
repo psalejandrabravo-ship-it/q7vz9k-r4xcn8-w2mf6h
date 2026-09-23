@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { CopyAulaButton } from "@/components/game/CopyAulaButton";
 import { TOTAL_SITUACIONES } from "@/data";
 import { useGameStore } from "@/store/game-store";
@@ -17,15 +17,14 @@ export function ProfilesView() {
   return (
     <section className="sheet-view px-6 py-10">
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
-        <Logo />
+        <BrandMark />
         <h1 className="text-3xl font-extrabold text-indigo">Perfiles</h1>
         <p className="text-muted">
           Guarda el avance de un curso en este dispositivo. Puedes cambiar de sala sin mezclar el recorrido.
         </p>
         <p className="text-muted">
-          El enlace del aula lleva colegio, curso y docente en la dirección, sin subir datos a un servidor. El
-          avance de las situaciones queda en cada computador. El logo hay que cargarlo otra vez en el otro
-          dispositivo.
+          El enlace abre la presentación con el colegio, el curso y la marca elegida. No pasa por un servidor. El
+          avance de las situaciones queda en cada computador.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">

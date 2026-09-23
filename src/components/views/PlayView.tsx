@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { BookOpen, Pause, Settings, Volume2, X } from "lucide-react";
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { FeedbackScreen } from "@/components/game/FeedbackScreen";
 import { FullscreenButton } from "@/components/game/FullscreenButton";
 import { SceneImage } from "@/components/game/SceneImage";
@@ -92,7 +92,7 @@ export function PlayView() {
   return (
     <section className={cn("stage-play", motion ? "" : "no-motion")}>
       <header className="area-header">
-        <Logo variant="white" className="hidden h-7 shrink-0 lg:block" />
+        <BrandMark variant="white" className="hidden h-7 shrink-0 lg:block" />
         <h1 className="min-w-0 flex-1 truncate text-sm font-extrabold tracking-wide text-cream md:text-base">
           El viaje de los corazones
         </h1>

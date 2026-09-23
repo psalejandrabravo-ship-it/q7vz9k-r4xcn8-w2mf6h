@@ -1,4 +1,4 @@
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { useGameStore } from "@/store/game-store";
 import type { NarrationMode, Rhythm } from "@/types/game";
 
@@ -23,7 +23,7 @@ export function SettingsView() {
   return (
     <section className="sheet-view px-6 py-10">
       <div className="mx-auto flex max-w-2xl flex-col gap-8">
-        <Logo />
+        <BrandMark />
         <h1 className="text-3xl font-extrabold text-indigo">Configuración</h1>
 
         <fieldset className="space-y-3">

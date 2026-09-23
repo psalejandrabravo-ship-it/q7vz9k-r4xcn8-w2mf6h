@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Customize, PersistedState, Profile, Settings } from "@/types/game";
+import type { Customize, LogoMode, PersistedState, Profile, Settings } from "@/types/game";
 
 export const STORAGE_KEY = "mirarim-viaje-corazones";
 export const SCHEMA_VERSION = 3 as const;
@@ -21,6 +21,7 @@ const customizeSchema = z.object({
   courseName: z.string().max(80).default(""),
   teacherName: z.string().max(80).default(""),
   logoDataUrl: z.string().nullable().default(null),
+  logoMode: z.enum(["mirarim", "custom", "hidden"]).optional(),
   sessionDate: z.string().default(""),
 });
 
@@ -69,6 +70,7 @@ export function defaultCustomize(): Customize {
     courseName: "",
     teacherName: "",
     logoDataUrl: null,
+    logoMode: "mirarim",
     sessionDate: new Date().toISOString().slice(0, 10),
   };
 }
@@ -90,6 +92,24 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function normalizeCustomize(input: {
+  schoolName: string;
+  courseName: string;
+  teacherName: string;
+  logoDataUrl: string | null;
+  logoMode?: LogoMode;
+  sessionDate: string;
+}): Customize {
+  return {
+    schoolName: input.schoolName,
+    courseName: input.courseName,
+    teacherName: input.teacherName,
+    logoDataUrl: input.logoDataUrl,
+    logoMode: input.logoMode ?? (input.logoDataUrl ? "custom" : "mirarim"),
+    sessionDate: input.sessionDate || todayIso(),
+  };
+}
+
 function migrate(raw: unknown): PersistedState {
   if (!raw || typeof raw !== "object") return defaultPersisted;
   const data = raw as Record<string, unknown>;
@@ -102,11 +122,11 @@ function migrate(raw: unknown): PersistedState {
       ...parsed.data,
       introSeen: parsed.data.introSeen ?? false,
       settings: { ...defaultSettings, ...parsed.data.settings, scriptOpen: parsed.data.settings.scriptOpen },
-      customize: {
-        ...defaultCustomize(),
-        ...parsed.data.customize,
-        sessionDate: parsed.data.customize.sessionDate || todayIso(),
-      },
+      customize: normalizeCustomize(parsed.data.customize),
+      profiles: parsed.data.profiles.map((profile) => ({
+        ...profile,
+        customize: normalizeCustomize(profile.customize),
+      })),
     };
   }
 
@@ -143,6 +163,7 @@ function migrate(raw: unknown): PersistedState {
         courseName,
         teacherName: typeof oldCustomize.teacherName === "string" ? oldCustomize.teacherName : "",
         logoDataUrl: typeof oldCustomize.logoDataUrl === "string" ? oldCustomize.logoDataUrl : null,
+        logoMode: typeof oldCustomize.logoDataUrl === "string" ? "custom" : "mirarim",
       },
       landscapeHintDismissed: data.landscapeHintDismissed === true,
       introSeen: data.introSeen === true,

@@ -75,6 +75,20 @@ interface GameStore {
   dismissShareNotice: () => void;
 }
 
+function applySharedCustomize(share: ClassroomShare, base: Customize): Customize {
+  const next: Customize = {
+    schoolName: share.schoolName,
+    courseName: share.courseName,
+    teacherName: share.teacherName,
+    sessionDate: share.sessionDate || base.sessionDate,
+    logoMode: share.logoIncluded ? share.logoMode : base.logoMode,
+    logoDataUrl: base.logoDataUrl,
+  };
+  if (!share.logoIncluded) return next;
+  if (share.logoMode === "custom" && share.logoDataUrl) next.logoDataUrl = share.logoDataUrl;
+  return next;
+}
+
 function applyMixer(settings: Settings) {
   setMixer({
     master: settings.volumeMaster,
@@ -391,13 +405,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   importClassroom: (share) => {
     const { profiles, customize: current } = get();
-    const nextCustomize: Customize = {
-      schoolName: share.schoolName,
-      courseName: share.courseName,
-      teacherName: share.teacherName,
-      sessionDate: share.sessionDate || current.sessionDate,
-      logoDataUrl: null,
-    };
     const match = profiles.find(
       (p) =>
         p.name === share.name &&
@@ -405,11 +412,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         p.customize.courseName === share.courseName,
     );
     if (match) {
-      const merged: Customize = {
-        ...match.customize,
-        ...nextCustomize,
-        logoDataUrl: match.customize.logoDataUrl,
-      };
+      const merged = applySharedCustomize(share, match.customize);
       set({
         profiles: profiles.map((p) => (p.id === match.id ? { ...p, customize: merged } : p)),
         activeProfileId: match.id,
@@ -426,6 +429,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         paused: false,
       });
     } else {
+      const nextCustomize = applySharedCustomize(share, {
+        ...current,
+        logoDataUrl: null,
+        logoMode: "mirarim",
+      });
       const profile = newProfile(share.name, nextCustomize);
       set({
         profiles: [...profiles, profile],

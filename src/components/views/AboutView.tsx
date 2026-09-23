@@ -1,4 +1,4 @@
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { useGameStore } from "@/store/game-store";
 
 export function AboutView() {
@@ -7,16 +7,16 @@ export function AboutView() {
   return (
     <section className="sheet-view px-6 py-10">
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
-        <Logo />
+        <BrandMark />
         <h1 className="text-3xl font-extrabold text-indigo">Acerca de</h1>
         <p className="text-lg leading-relaxed">
           <strong>El viaje de los corazones</strong> es un recorrido de 12 situaciones socioemocionales para
           educación parvularia. Lo guía la persona educadora, proyectado en la sala.
         </p>
         <p className="text-lg leading-relaxed text-muted">
-          Un proyecto de MIRARIM. No se piden ni se envían nombres de niñas o niños. Colegio, curso, docente y
-          logo quedan en este dispositivo. El enlace del aula lleva esos datos en la dirección (después del #),
-          sin pasar por un servidor. El avance del juego no viaja con el enlace.
+          Un proyecto de MIRARIM. No se piden ni se envían nombres de niñas o niños. En Personalizar puedes
+          usar el logo del establecimiento o ocultar MIRARIM. Esa marca, el colegio y el curso viajan en el
+          enlace de la presentación, sin pasar por un servidor. El avance del juego no viaja.
         </p>
         <button
           type="button"

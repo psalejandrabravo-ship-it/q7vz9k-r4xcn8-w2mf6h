@@ -1,4 +1,4 @@
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { useGameStore } from "@/store/game-store";
 
 const steps = [
@@ -10,7 +10,7 @@ const steps = [
   "El grupo vota con los dedos o los pulgares. Tú pulsas la opción de la mayoría. No hay puntaje ni perdedores.",
   "Al responder se ve la ilustración de la situación y el porqué. Pulsa Continuar. No hay que repetir.",
   "La voz suena solo cuando pulsas el ícono. Los sonidos de acierto y error se oyen al elegir.",
-  "En Perfiles o Personalizar puedes copiar un enlace del aula (colegio, curso y docente) para abrirla en otro computador o en el proyector. El avance queda en cada dispositivo.",
+  "En Personalizar eliges la marca: logo MIRARIM, el de tu establecimiento, o ninguno. Desde ahí puedes generar una presentación para abrirla en otro computador o en el proyector. El avance queda en cada dispositivo.",
 ];
 
 export function HowToView() {
@@ -23,7 +23,7 @@ export function HowToView() {
   return (
     <section className="sheet-view px-6 py-10">
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
-        <Logo />
+        <BrandMark />
         <h1 className="text-3xl font-extrabold text-indigo md:text-4xl">Cómo se juega</h1>
         <p className="text-lg text-muted">Esta guía es para la persona educadora. El grupo no necesita leer.</p>
         <ol className="space-y-4">

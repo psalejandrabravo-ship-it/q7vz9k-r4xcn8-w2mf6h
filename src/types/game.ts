@@ -74,11 +74,14 @@ export interface Settings {
   scriptOpen: boolean;
 }
 
+export type LogoMode = "mirarim" | "custom" | "hidden";
+
 export interface Customize {
   schoolName: string;
   courseName: string;
   teacherName: string;
   logoDataUrl: string | null;
+  logoMode: LogoMode;
   sessionDate: string;
 }
 

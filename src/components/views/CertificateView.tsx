@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BrandMark } from "@/components/brand/Logo";
 import { SITUACIONES, TOTAL_SITUACIONES } from "@/data";
 import { useGameStore } from "@/store/game-store";
 
@@ -77,11 +78,7 @@ export function CertificateView() {
           className="rounded-xl bg-paper p-8 text-center md:p-12"
           style={{ boxShadow: "inset 0 0 0 8px var(--color-indigo), inset 0 0 0 12px var(--color-gold)" }}
         >
-          {customize.logoDataUrl ? (
-            <img src={customize.logoDataUrl} alt="" className="mx-auto h-16 object-contain" />
-          ) : (
-            <img src="/assets/brand/MIRARIM-horizontal-color.svg" alt="MIRARIM" className="mx-auto h-10" />
-          )}
+          <BrandMark className="mx-auto h-16" />
           <p className="mt-6 text-sm font-bold tracking-[0.3em] text-coral">CERTIFICADO</p>
           <h1 className="mt-3 text-3xl font-extrabold text-indigo md:text-4xl">Expertos en empatía</h1>
           <p className="mt-6 text-lg">Este certificado reconoce que</p>

@@ -1,5 +1,5 @@
 import { Play, Clapperboard } from "lucide-react";
-import { Logo } from "@/components/brand/Logo";
+import { BrandMark } from "@/components/brand/Logo";
 import { FullscreenButton } from "@/components/game/FullscreenButton";
 import { enterFullscreen } from "@/lib/game/fullscreen";
 import { unlockAudio } from "@/lib/audio/sfx";
@@ -36,7 +36,7 @@ export function WelcomeView() {
         <FullscreenButton light label />
       </div>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 pb-8 text-center">
-        <Logo variant="white" className="h-8 shrink-0 md:h-11" />
+        <BrandMark variant="white" className="h-8 shrink-0 md:h-11" />
         <div className="max-w-2xl space-y-3">
           <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-gold">Bienvenida</p>
           <h1 className="text-3xl font-extrabold tracking-tight text-cream sm:text-4xl md:text-5xl">
