@@ -2,6 +2,7 @@ import { BookOpen, Play, Settings, SlidersHorizontal, Users } from "lucide-react
 import { BrandMark } from "@/components/brand/Logo";
 import { CopyAulaButton } from "@/components/game/CopyAulaButton";
 import { FullscreenButton } from "@/components/game/FullscreenButton";
+import { GUIA_FILENAME, GUIA_PDF } from "@/components/views/ActivityView";
 import { TOTAL_SITUACIONES } from "@/data";
 import { unlockAudio } from "@/lib/audio/sfx";
 import { warmupVoices } from "@/lib/audio/speech";
@@ -106,6 +107,13 @@ export function CoverView() {
           </button>
         </div>
         {aulaLabel ? <CopyAulaButton customize={customize} variant="cover" /> : null}
+        <a
+          href={GUIA_PDF}
+          download={GUIA_FILENAME}
+          className="text-sm font-semibold text-cream/85 underline-offset-4 hover:underline"
+        >
+          Descargar actividad
+        </a>
         <button
           type="button"
           onClick={() => setScreen("about")}

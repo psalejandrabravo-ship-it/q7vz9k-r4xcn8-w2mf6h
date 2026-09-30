@@ -8,6 +8,7 @@ import { CertificateView } from "@/components/views/CertificateView";
 import { CustomizeView } from "@/components/views/CustomizeView";
 import { ProfilesView } from "@/components/views/ProfilesView";
 import { AboutView } from "@/components/views/AboutView";
+import { ActivityView } from "@/components/views/ActivityView";
 import { VideoView } from "@/components/views/VideoView";
 import { LandscapeHint } from "@/components/game/LandscapeHint";
 import { warmupVoices } from "@/lib/audio/speech";
@@ -73,6 +74,9 @@ export function GameApp() {
       break;
     case "about":
       view = <AboutView />;
+      break;
+    case "activity":
+      view = <ActivityView />;
       break;
     default:
       view = <CoverView />;

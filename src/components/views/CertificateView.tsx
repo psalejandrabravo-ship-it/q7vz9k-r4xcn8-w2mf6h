@@ -10,6 +10,7 @@ export function CertificateView() {
   const completed = useGameStore((s) => s.completed);
   const goCover = useGameStore((s) => s.goCover);
   const startPlay = useGameStore((s) => s.startPlay);
+  const openOverlay = useGameStore((s) => s.openOverlay);
   const [busy, setBusy] = useState(false);
 
   const dateSource = customize.sessionDate || certificateDate;
@@ -92,6 +93,13 @@ export function CertificateView() {
           <p className="text-muted">Respuestas adecuadas a la primera: {firstTry} / {TOTAL_SITUACIONES}</p>
           <p className="mt-4 text-muted">{date}</p>
         </article>
+        <button
+          type="button"
+          onClick={() => openOverlay("activity")}
+          className="self-center text-sm font-medium text-muted underline-offset-4 hover:underline print:hidden"
+        >
+          (ver actividad)
+        </button>
       </div>
     </section>
   );

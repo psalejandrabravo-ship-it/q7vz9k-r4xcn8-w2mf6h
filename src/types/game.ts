@@ -11,7 +11,8 @@ export type Screen =
   | "about"
   | "settings"
   | "play"
-  | "certificate";
+  | "certificate"
+  | "activity";
 
 export type PlayPhase = "play" | "chosen" | "explain";
 
